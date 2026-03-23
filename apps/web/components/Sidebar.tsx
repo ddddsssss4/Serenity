@@ -21,7 +21,7 @@ export function Sidebar() {
   ];
 
   return (
-    <nav className="h-screen w-72 fixed left-0 top-0 flex flex-col p-6 bg-surface/80 backdrop-blur-xl border-r border-outline-variant/15 z-40 shadow-[40px_0_60px_-10px_rgba(28,28,24,0.04)]">
+    <nav className="h-[calc(100vh-5rem)] w-72 fixed left-0 top-20 flex flex-col p-6 bg-surface/80 backdrop-blur-xl border-r border-outline-variant/15 z-[40] shadow-[40px_0_60px_-10px_rgba(28,28,24,0.04)]">
       <div className="mb-12">
         <h1 className="text-2xl font-serif italic text-primary">Serenity</h1>
         <p className="font-sans text-xs uppercase tracking-widest text-secondary mt-1">

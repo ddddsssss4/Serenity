@@ -6,6 +6,8 @@ export const metadata: Metadata = {
   description: "Serenity App",
 };
 
+import { Header } from "../components/Header";
+
 export default function RootLayout({
   children,
 }: {
@@ -19,7 +21,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Albert+Sans:ital,wght@0,100..900;1,100..900&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet" />
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
       </head>
-      <body>{children}</body>
+      <body>
+        <Header />
+        <div className="pt-20 min-h-[calc(100vh-5rem)] flex flex-col items-stretch">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
