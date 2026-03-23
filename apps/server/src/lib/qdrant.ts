@@ -7,7 +7,7 @@ export const qdrant = new QdrantClient({
 });
 
 export const COLLECTION_NAME = "serenity_memories";
-export const VECTOR_SIZE = 1536;
+export const VECTOR_SIZE = 3072;
 
 /**
  * Ensures the Qdrant collection exists on app startup.

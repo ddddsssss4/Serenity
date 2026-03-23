@@ -64,7 +64,7 @@ router.get("/:userId", requireAuth, async (req, res) => {
  * Privacy feature — users can erase their own memories.
  */
 router.delete("/:memoryId", requireAuth, async (req, res) => {
-  const { memoryId } = req.params;
+  const memoryId = req.params.memoryId as string;
 
   try {
     // Verify ownership
@@ -78,7 +78,7 @@ router.delete("/:memoryId", requireAuth, async (req, res) => {
       return;
     }
 
-    if (memory.userId !== req.userId) {
+    if (memory.userId !== (req.userId as string)) {
       res.status(403).json({ error: "Forbidden" });
       return;
     }

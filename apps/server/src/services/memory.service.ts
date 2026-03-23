@@ -1,11 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { v4 as uuidv4 } from "uuid";
 import { prisma } from "../lib/prisma.js";
 import { qdrant, COLLECTION_NAME } from "../lib/qdrant.js";
-import { embedText } from "../lib/gemini.js";
-
-const anthropic = new Anthropic();
-
+import { embedText, genAI } from "../lib/gemini.js";
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
@@ -162,14 +158,10 @@ export async function saveMemoryAsync(
   sessionId: string,
   transcript: string
 ): Promise<void> {
-  // Step 1: Extract structured memory from Claude (cheap model)
-  const extractionResponse = await anthropic.messages.create({
-    model: "claude-haiku-4-5",
-    max_tokens: 512,
-    messages: [
-      {
-        role: "user",
-        content: `Extract from this conversation:
+  // Step 1: Extract structured memory from Gemini (cheap model)
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+  
+  const extractionResponse = await model.generateContent(`Extract from this conversation:
 1. A concise memory summary (1-2 sentences of what she shared)
 2. Tags (array, pick from: relationship, anxiety, sleep, work, family, health, grief, friendship, self-esteem, goals)
 3. Emotion (single word)
@@ -178,15 +170,9 @@ export async function saveMemoryAsync(
 Return as JSON only, no other text.
 
 Conversation:
-${transcript}`,
-      },
-    ],
-  });
+${transcript}`);
 
-  const rawText =
-    extractionResponse.content[0].type === "text"
-      ? extractionResponse.content[0].text
-      : "";
+  const rawText = extractionResponse.response.text();
 
   let extracted: ExtractedMemory;
   try {

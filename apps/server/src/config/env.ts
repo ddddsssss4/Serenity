@@ -5,7 +5,6 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url().default("http://localhost:3001"),
   GEMINI_API_KEY: z.string().min(1),
-  ANTHROPIC_API_KEY: z.string().min(1),
   ELEVENLABS_API_KEY: z.string().min(1),
   ELEVENLABS_AGENT_ID: z.string().min(1),
   FIRECRAWL_API_KEY: z.string().min(1),

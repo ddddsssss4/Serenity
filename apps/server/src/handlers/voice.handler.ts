@@ -1,6 +1,7 @@
 import WebSocket, { WebSocketServer } from "ws";
 import type { IncomingMessage, Server } from "http";
-import Anthropic from "@anthropic-ai/sdk";
+import { type Content, SchemaType } from "@google/generative-ai";
+import { genAI } from "../lib/gemini.js";
 import { verifyWsToken } from "../middleware/auth.middleware.js";
 import { prisma } from "../lib/prisma.js";
 import { getSignedAgentUrl } from "../lib/elevenlabs.js";
@@ -17,8 +18,6 @@ import {
   appendMessage,
   type RecentSession,
 } from "../services/session.service.js";
-
-const anthropic = new Anthropic();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Serenity System Prompt Builder
@@ -72,7 +71,6 @@ function buildSystemPrompt(
     }
   }
 
-  // Detect recurring patterns from memory tags
   const tagCount: Record<string, number> = {};
   for (const m of memories) {
     for (const t of m.tags) tagCount[t] = (tagCount[t] || 0) + 1;
@@ -92,36 +90,30 @@ function buildSystemPrompt(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Firecrawl Tool Definition
+// Firecrawl Tool Definition for Gemini
 // ─────────────────────────────────────────────────────────────────────────────
 
-const searchResearchTool: Anthropic.Tool = {
-  name: "search_research",
-  description: `Search for psychology, neuroscience, relationship science, or health research to support and validate what the user is experiencing. Use this when the conversation touches on emotional patterns, relationship dynamics, mental health topics, sleep, hormones, or any area where citing real research would make the user feel understood and empowered. Do NOT use for purely personal reflections like dreams or daily events.`,
-  input_schema: {
-    type: "object" as const,
-    properties: {
-      query: {
-        type: "string",
-        description:
-          "Specific research query, e.g. 'anxious attachment pattern in relationships psychology'",
-      },
-      topic: {
-        type: "string",
-        enum: [
-          "relationships",
-          "mental_health",
-          "anxiety",
-          "sleep",
-          "hormones",
-          "grief",
-          "self_esteem",
-          "attachment_theory",
-        ],
+const searchResearchTool = {
+  functionDeclarations: [
+    {
+      name: "search_research",
+      description: `Search for psychology, neuroscience, relationship science, or health research. Use this when the conversation touches on emotional patterns, mental health, sleep, etc.`,
+      parameters: {
+        type: SchemaType.OBJECT,
+        properties: {
+          query: {
+            type: SchemaType.STRING,
+            description: "Specific research query (e.g. anxious attachment pattern psychology)",
+          },
+          topic: {
+            type: SchemaType.STRING,
+            description: "Topic of research (mental_health, relationships, etc.)",
+          },
+        },
+        required: ["query", "topic"],
       },
     },
-    required: ["query", "topic"],
-  },
+  ],
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -134,7 +126,7 @@ interface ConnectionState {
   sessionId: string;
   memories: MemoryResult[];
   sessions: RecentSession[];
-  conversationHistory: Anthropic.MessageParam[];
+  conversationHistory: Content[];
   elevenLabsWs: WebSocket | null;
   isReady: boolean;
 }
@@ -146,7 +138,6 @@ interface ConnectionState {
 export function createVoiceWebSocketServer(server: Server): WebSocketServer {
   const wss = new WebSocketServer({ noServer: true });
 
-  // Handle HTTP upgrade → WebSocket
   server.on("upgrade", (request: IncomingMessage, socket, head) => {
     const url = new URL(request.url || "", `http://${request.headers.host}`);
     if (url.pathname !== "/api/voice/stream") return;
@@ -157,9 +148,6 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
   });
 
   wss.on("connection", async (clientWs: WebSocket, request: IncomingMessage) => {
-    // ──────────────────────────────────────────────────────
-    // STEP 1: Authenticate and initialize connection
-    // ──────────────────────────────────────────────────────
     const url = new URL(request.url || "", `http://${request.headers.host}`);
     const token =
       url.searchParams.get("token") ||
@@ -173,7 +161,6 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
       return;
     }
 
-    // Create a new session for this conversation
     const sessionId = await createSession(verified.userId);
 
     const state: ConnectionState = {
@@ -187,7 +174,6 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
       isReady: false,
     };
 
-    // Connect to ElevenLabs Conversational AI
     try {
       const signedUrl = await getSignedAgentUrl();
       const elevenLabsWs = new WebSocket(signedUrl);
@@ -199,38 +185,30 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
         console.log(`🎙️ Voice session started for user ${state.userId}`);
       });
 
-      // Forward ElevenLabs audio/events back to client
       elevenLabsWs.on("message", async (data: WebSocket.RawData) => {
         try {
           const msg = JSON.parse(data.toString());
 
-          // ──────────────────────────────────────────────────
-          // STEP 3: Handle transcription from ElevenLabs STT
-          // ──────────────────────────────────────────────────
           if (msg.type === "user_transcript" && msg.user_transcript_event) {
             const transcript: string = msg.user_transcript_event.user_transcript;
 
-            // Append user message to history
             state.conversationHistory.push({
               role: "user",
-              content: transcript,
+              parts: [{ text: transcript }],
             });
 
-            // Append to session
             await appendMessage(state.sessionId, {
               role: "user",
               content: transcript,
             });
 
-            // Build system prompt with injected memories
             const systemPrompt = buildSystemPrompt(
               state.memories,
               state.sessions,
               state.userName
             );
 
-            // Call Claude with streaming + research tool
-            await handleClaudeStreaming(
+            await handleGeminiStreaming(
               state,
               clientWs,
               systemPrompt,
@@ -238,7 +216,6 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
             );
           }
 
-          // Forward audio events to client
           if (msg.type === "audio" || msg.type === "agent_response") {
             clientWs.send(data.toString());
           }
@@ -265,32 +242,23 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
       );
     }
 
-    // ──────────────────────────────────────────────────────────────────────
-    // STEP 2: Handle mic_open — parallel memory + session fetch
-    // ──────────────────────────────────────────────────────────────────────
     clientWs.on("message", async (data: WebSocket.RawData) => {
       try {
         const msg = JSON.parse(data.toString());
 
         if (msg.type === "mic_open") {
           const lastMessage: string = msg.lastMessage || "";
-
           const startTime = Date.now();
 
-          // Fire all three in parallel
           const [searchResults, sessionsResult] = await Promise.all([
             vectorSearch(state.userId, lastMessage || "how are you feeling today"),
-            (async () => {
-              // A) vectorSearch is handled above
-              return [];
-            })(),
+            (async () => [])(),
             recentSessions(state.userId).then((s) => {
               state.sessions = s;
               return s;
             }),
           ]);
 
-          // B) tag pattern pull using results from A
           state.memories = await tagPatternPull(state.userId, searchResults);
 
           console.log(
@@ -307,7 +275,6 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
           return;
         }
 
-        // Forward other messages to ElevenLabs
         if (state.elevenLabsWs?.readyState === WebSocket.OPEN) {
           state.elevenLabsWs.send(data.toString());
         }
@@ -330,152 +297,121 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STEP 4: Claude Streaming with Firecrawl Tool Use
+// STEP 4: Gemini Streaming with Firecrawl Tool Use
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function handleClaudeStreaming(
+async function handleGeminiStreaming(
   state: ConnectionState,
   clientWs: WebSocket,
   systemPrompt: string,
   userTranscript: string
 ): Promise<void> {
   let fullAssistantResponse = "";
-  let currentMessages = [...state.conversationHistory];
 
-  // Claude streaming loop (handles tool use)
+  const chatModel = genAI.getGenerativeModel({
+    model: "gemini-2.5-flash",
+    systemInstruction: systemPrompt,
+    tools: [searchResearchTool as any],
+  });
+
   let continueStreaming = true;
+  
+  // Create chat session with current history (excluding the new user turn since sendMessage does it)
+  // Actually, state.conversationHistory already HAS the user turn because we pushed it above.
+  // We need to pop it off to use sendMessageStreeam.
+  const historyToUse = [...state.conversationHistory];
+  const lastUserTurn = historyToUse.pop();
+
+  const chat = chatModel.startChat({
+    history: historyToUse,
+  });
 
   while (continueStreaming) {
-    const stream = anthropic.messages.stream({
-      model: "claude-sonnet-4-5",
-      max_tokens: 1024,
-      system: systemPrompt,
-      tools: [searchResearchTool],
-      messages: currentMessages,
-    });
+    try {
+      const result = await chat.sendMessageStream(lastUserTurn?.parts?.[0]?.text || "hello");
+      
+      let gotToolCall = false;
 
-    let toolUseBlock: { id: string; name: string; input: { query: string; topic: string } } | null = null;
-    let toolInputAccumulator = "";
+      for await (const chunk of result.stream) {
+        const toolCalls = chunk.functionCalls();
+        if (toolCalls && toolCalls.length > 0) {
+          gotToolCall = true;
+          const call = toolCalls[0];
+          
+          if (call && call.name === "search_research") {
+            const query = (call.args as any).query as string;
+            const topic = (call.args as any).topic as string;
+            
+            clientWs.send(JSON.stringify({ type: "researching", query }));
+            
+            const researchResult = await searchResearch(query, topic);
+            
+            // Send the tool response back (re-entering loop)
+            const responseResult = await chat.sendMessageStream([
+              {
+                functionResponse: {
+                  name: "search_research",
+                  response: { result: researchResult }
+                }
+              }
+            ]);
+            
+            for await (const respChunk of responseResult.stream) {
+               const token = respChunk.text();
+               fullAssistantResponse += token;
 
-    for await (const event of stream) {
-      if (event.type === "content_block_start") {
-        if (event.content_block.type === "tool_use") {
-          toolUseBlock = {
-            id: event.content_block.id,
-            name: event.content_block.name,
-            input: { query: "", topic: "mental_health" },
-          };
-          toolInputAccumulator = "";
-        }
-      }
+               if (state.elevenLabsWs?.readyState === WebSocket.OPEN && token) {
+                 state.elevenLabsWs.send(
+                   JSON.stringify({ type: "tts_input", text: token })
+                 );
+               }
 
-      if (event.type === "content_block_delta") {
-        if (event.delta.type === "text_delta") {
-          const token = event.delta.text;
-          fullAssistantResponse += token;
-
-          // STEP 4: Pipe each token to ElevenLabs TTS immediately
-          if (state.elevenLabsWs?.readyState === WebSocket.OPEN) {
-            state.elevenLabsWs.send(
-              JSON.stringify({ type: "tts_input", text: token })
-            );
+               clientWs.send(JSON.stringify({ type: "text_delta", delta: token }));
+            }
           }
-
-          // Also send to client for display
-          clientWs.send(
-            JSON.stringify({ type: "text_delta", delta: token })
-          );
-        }
-
-        if (event.delta.type === "input_json_delta") {
-          toolInputAccumulator += event.delta.partial_json;
-        }
-      }
-
-      if (event.type === "content_block_stop" && toolUseBlock) {
-        try {
-          toolUseBlock.input = JSON.parse(toolInputAccumulator);
-        } catch {
-          // partial input
-        }
-      }
-
-      if (event.type === "message_stop") {
-        const stopReason = (await stream.finalMessage()).stop_reason;
-
-        if (stopReason === "tool_use" && toolUseBlock) {
-          // STEP 4: Handle Firecrawl tool call
-          clientWs.send(
-            JSON.stringify({
-              type: "researching",
-              query: toolUseBlock.input.query,
-            })
-          );
-
-          const researchResult = await searchResearch(
-            toolUseBlock.input.query,
-            toolUseBlock.input.topic
-          );
-
-          // Append assistant message with tool use to history
-          currentMessages.push({
-            role: "assistant",
-            content: [
-              {
-                type: "tool_use",
-                id: toolUseBlock.id,
-                name: toolUseBlock.name,
-                input: toolUseBlock.input,
-              },
-            ],
-          });
-
-          // Append tool result
-          currentMessages.push({
-            role: "user",
-            content: [
-              {
-                type: "tool_result",
-                tool_use_id: toolUseBlock.id,
-                content: researchResult,
-              },
-            ],
-          });
-
-          toolUseBlock = null;
-          toolInputAccumulator = "";
-          // Continue Claude streaming with research results
         } else {
-          // STEP 4: message_stop — response complete
-          continueStreaming = false;
-
-          // Append final assistant response to conversation history
-          state.conversationHistory.push({
-            role: "assistant",
-            content: fullAssistantResponse,
-          });
-
-          // Append to session
-          await appendMessage(state.sessionId, {
-            role: "assistant",
-            content: fullAssistantResponse,
-          });
-
-          clientWs.send(JSON.stringify({ type: "response_complete" }));
-
-          // STEP 5: Fire-and-forget memory save
-          const transcriptForSaving = state.conversationHistory
-            .slice(-6) // Last 3 turns
-            .map((m) => `${m.role}: ${typeof m.content === "string" ? m.content : JSON.stringify(m.content)}`)
-            .join("\n");
-
-          saveMemoryAsync(
-            state.userId,
-            state.sessionId,
-            transcriptForSaving
-          ).catch(console.error);
+          try {
+            const token = chunk.text();
+            if (token) {
+              fullAssistantResponse += token;
+              if (state.elevenLabsWs?.readyState === WebSocket.OPEN) {
+                state.elevenLabsWs.send(
+                  JSON.stringify({ type: "tts_input", text: token })
+                );
+              }
+              clientWs.send(JSON.stringify({ type: "text_delta", delta: token }));
+            }
+          } catch(e) {}
         }
       }
+      
+      continueStreaming = false; // completed
+      
+    } catch(err) {
+       console.error("Gemini stream error:", err);
+       continueStreaming = false;
     }
   }
+
+  // Finalize
+  state.conversationHistory.push(
+    { role: "user", parts: [{ text: userTranscript }] },
+    { role: "model", parts: [{ text: fullAssistantResponse }] }
+  );
+
+  await appendMessage(state.sessionId, {
+    role: "assistant",
+    content: fullAssistantResponse,
+  });
+
+  clientWs.send(JSON.stringify({ type: "response_complete" }));
+
+  const transcriptForSaving = state.conversationHistory
+    .slice(-6)
+    .map((m) => `${m.role}: ${m.parts[0]?.text || ""}`)
+    .join("\n");
+
+  saveMemoryAsync(state.userId, state.sessionId, transcriptForSaving).catch(
+    console.error
+  );
 }

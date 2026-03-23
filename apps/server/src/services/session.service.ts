@@ -24,17 +24,17 @@ export async function recentSessions(userId: string): Promise<RecentSession[]> {
     },
   });
 
-  return sessions.map((s) => {
-    const msgs = (s.messages as Array<{ role: string; content: string; timestamp: string }>) || [];
-    // Return only the last 2 messages
-    const lastMessages = msgs.slice(-2);
-    return {
-      id: s.id,
-      summary: s.summary,
-      lastMessages,
-      createdAt: s.createdAt,
-    };
-  });
+  const result: RecentSession[] = [];
+  for (const s of sessions) {
+    const msgs = ((s.messages ?? []) as Array<{ role: string; content: string; timestamp: string }>);
+    result.push({
+      id: s.id as string,
+      summary: s.summary as string | null | undefined,
+      lastMessages: msgs.slice(-2),
+      createdAt: s.createdAt as Date,
+    });
+  }
+  return result;
 }
 
 /**

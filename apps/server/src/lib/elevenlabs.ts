@@ -1,4 +1,4 @@
-import { ElevenLabsClient } from "elevenlabs";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { env } from "../config/env.js";
 
 export const elevenlabs = new ElevenLabsClient({
@@ -12,8 +12,8 @@ export const elevenlabs = new ElevenLabsClient({
 export async function getSignedAgentUrl(): Promise<string> {
   const response = await elevenlabs.conversationalAi.conversations.getSignedUrl(
     {
-      agent_id: env.ELEVENLABS_AGENT_ID,
+      agentId: env.ELEVENLABS_AGENT_ID,
     }
   );
-  return response.signed_url;
+  return response.signedUrl;
 }
