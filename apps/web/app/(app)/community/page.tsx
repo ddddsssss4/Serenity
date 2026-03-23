@@ -5,36 +5,7 @@ import Link from "next/link";
 export default function CommunityPage() {
   return (
     <div className="flex max-w-screen-xl mx-auto w-full">
-      {/* Side Navigation (Visible on Desktop) */}
-      <aside className="hidden lg:flex flex-col w-64 py-12 pr-6 sticky top-20 h-[calc(100vh-80px)] shrink-0 border-r border-outline-variant/15">
-        <div className="space-y-2">
-          <p className="text-[0.75rem] font-medium tracking-widest text-secondary mb-6 uppercase">Navigation</p>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface-container-highest text-primary font-semibold">
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>explore</span>
-            <span>Discover</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-secondary hover:bg-surface-container transition-colors">
-            <span className="material-symbols-outlined">groups</span>
-            <span>My Circles</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-secondary hover:bg-surface-container transition-colors">
-            <span className="material-symbols-outlined">star</span>
-            <span>Trending</span>
-          </Link>
-          <Link href="#" className="flex items-center gap-3 px-4 py-3 rounded-xl text-secondary hover:bg-surface-container transition-colors">
-            <span className="material-symbols-outlined">location_on</span>
-            <span>Local</span>
-          </Link>
-        </div>
 
-        <div className="mt-auto p-6 rounded-lg bg-primary-fixed/30 border border-primary/10">
-          <p className="font-serif text-primary text-lg leading-snug mb-2">Grow Together</p>
-          <p className="text-xs text-secondary mb-4 leading-relaxed">Join 12 new members who found their tribe today.</p>
-          <button className="w-full py-2 bg-primary text-white rounded-full text-xs font-semibold hover:opacity-90 transition-opacity">
-            Host a Circle
-          </button>
-        </div>
-      </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 px-8 lg:px-12 py-12 overflow-y-auto">
