@@ -29,7 +29,7 @@ export function Sidebar() {
         </p>
       </div>
 
-      <div className="flex flex-col space-y-2 flex-grow">
+      <div className="flex flex-col space-y-2 flex-grow overflow-y-auto pb-4">
         {navItems.map((item) => {
           const isActive = pathname === item.path || (pathname === '/' && item.path === '/sanctuary');
           

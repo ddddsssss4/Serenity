@@ -2,7 +2,7 @@ import { Sidebar } from '../../components/Sidebar';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex flex-1 w-full bg-surface relative">
+    <div className="flex flex-1 w-full bg-surface">
       <Sidebar />
       <div className="flex-1 ml-72 flex flex-col items-stretch">
         {children}

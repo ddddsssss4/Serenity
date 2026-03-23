@@ -19,7 +19,7 @@ export function Header() {
   ];
 
   return (
-    <header className="fixed top-0 left-0 w-full h-20 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/15 z-[60] flex items-center justify-between px-8 md:px-12">
+    <header className="sticky top-0 left-0 w-full h-20 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/15 z-50 flex shrink-0 items-center justify-between px-8 md:px-12">
       {/* Logo */}
       <Link href="/" className="font-serif text-3xl font-bold text-primary tracking-tight">
         Serenity

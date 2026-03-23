@@ -23,7 +23,7 @@ export default function RootLayout({
       </head>
       <body>
         <Header />
-        <div className="pt-20 min-h-[calc(100vh-5rem)] flex flex-col items-stretch">
+        <div className="min-h-[calc(100vh-5rem)] flex flex-col items-stretch">
           {children}
         </div>
       </body>
