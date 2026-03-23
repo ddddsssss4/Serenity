@@ -50,9 +50,9 @@ export default function CommunityPage() {
               </p>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-outline font-medium">1.2k members</span>
-                <button className="px-8 py-3 bg-gradient-to-b from-primary to-primary-container text-white rounded-full text-sm font-semibold hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm shadow-primary/20">
+                <Link href="/community/morning-glow" className="px-8 py-3 bg-gradient-to-b from-primary to-primary-container text-white rounded-full text-sm font-semibold hover:scale-105 active:scale-95 transition-all duration-200 shadow-sm shadow-primary/20">
                   Join Circle
-                </button>
+                </Link>
               </div>
             </div>
           </article>
