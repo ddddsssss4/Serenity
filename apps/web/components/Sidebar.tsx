@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { authClient } from '../lib/auth-client';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -11,6 +12,8 @@ function cn(...inputs: (string | undefined | null | false)[]) {
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
 
   const isCircleChat = pathname.startsWith('/community/') && pathname !== '/community';
 
@@ -127,15 +130,23 @@ export function Sidebar() {
         </button>
         
         <div className="mt-6 flex items-center gap-3 px-2">
-          <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/30">
-            <img 
-              alt="User profile minimalist icon" 
-              className="w-full h-full object-cover" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrxxQpUtJsNGMBXCJWBqtxlILl0LrMscMBkc_ueXDg-Z71_2wXOdPu5S2LtzVHylmsYhLtkW57mwOyNGDV25fLrJvFXeEALxH4EsOJ62xpCfGBfgmIQ-RRTArcBGwunAH1a0_7IL24TDSnS15DRWWDwguc9NPDF-SHXcH7AzeSRE87Y5V7EZ0UDR9t0zexsOZF6Mb0N15w-JRk8zF7r0xr0qZuafOdqf7GHAxy34sdhnUDYjRncwSkgrQsF8KIPtQYsWslWcYTzFHX"
-            />
+          <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/30 flex items-center justify-center">
+            {user?.image ? (
+              <img 
+                alt={user.name || "User profile"} 
+                className="w-full h-full object-cover" 
+                src={user.image}
+              />
+            ) : (
+              <span className="text-primary font-bold text-sm">
+                {user?.name?.[0].toUpperCase() || "S"}
+              </span>
+            )}
           </div>
           <div className="flex flex-col">
-            <span className="text-sm font-semibold text-on-surface">Emma</span>
+            <span className="text-sm font-semibold text-on-surface truncate max-w-[150px]">
+              {user?.name || "Serenity User"}
+            </span>
             <span className="text-[10px] text-secondary uppercase tracking-tighter">Premium Member</span>
           </div>
         </div>
