@@ -27,13 +27,14 @@ export default function PersonalVoiceAgent() {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const audioQueueRef = useRef<HTMLAudioElement[]>([]);
+  const nextPlayTimeRef = useRef<number>(0); // for gapless scheduling
 
   const stopSession = () => {
     setIsListening(false);
     setStatus('idle');
     wsRef.current?.close();
     wsRef.current = null;
+    nextPlayTimeRef.current = 0;
     
     if (processorRef.current) {
       processorRef.current.disconnect();
@@ -47,9 +48,6 @@ export default function PersonalVoiceAgent() {
       mediaStreamRef.current.getTracks().forEach(t => t.stop());
       mediaStreamRef.current = null;
     }
-    // Drain audio queue
-    audioQueueRef.current.forEach(a => { a.pause(); a.src = ''; });
-    audioQueueRef.current = [];
   };
 
   const toggleListen = async () => {
@@ -103,12 +101,45 @@ export default function PersonalVoiceAgent() {
         }
 
         if (data.type === 'audio' && data.audio_event?.audio_base_64) {
-          const snd = new Audio('data:audio/mp3;base64,' + data.audio_event.audio_base_64);
-          audioQueueRef.current.push(snd);
-          snd.play().catch(e => console.error('Audio playback error:', e));
-          snd.onended = () => {
-            audioQueueRef.current = audioQueueRef.current.filter(a => a !== snd);
+          // Use Web Audio API for gapless, zero-lag playback of ElevenLabs response
+          const playChunk = async (b64: string) => {
+            try {
+              // Ensure AudioContext is alive
+              const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+              if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+                audioContextRef.current = new AudioCtx({ sampleRate: 24000 });
+              }
+              // Resume context if suspended (browser auto-suspend policy)
+              if (audioContextRef.current.state === 'suspended') {
+                await audioContextRef.current.resume();
+              }
+              const audioCtx = audioContextRef.current;
+
+              // Base64 → ArrayBuffer
+              const binary = atob(b64);
+              const buf = new ArrayBuffer(binary.length);
+              const view = new Uint8Array(buf);
+              for (let i = 0; i < binary.length; i++) view[i] = binary.charCodeAt(i);
+
+              // decodeAudioData handles MP3, Opus, WAV — whatever ElevenLabs sends
+              const audioBuf = await audioCtx.decodeAudioData(buf);
+
+              const now = audioCtx.currentTime;
+              const startAt = Math.max(nextPlayTimeRef.current, now);
+              nextPlayTimeRef.current = startAt + audioBuf.duration;
+
+              const source = audioCtx.createBufferSource();
+              source.buffer = audioBuf;
+              source.connect(audioCtx.destination);
+              source.start(startAt);
+              console.log(`🔊 Audio chunk: ${audioBuf.duration.toFixed(2)}s at T+${startAt.toFixed(2)}s`);
+            } catch (e) {
+              console.error('Audio decode error:', e);
+            }
           };
+
+          // Fire and forget — non-async handler
+          playChunk(data.audio_event.audio_base_64);
         }
 
         if (data.type === 'response_complete') {
