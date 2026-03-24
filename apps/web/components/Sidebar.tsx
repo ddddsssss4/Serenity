@@ -125,14 +125,7 @@ export function Sidebar() {
       </div>
 
       <div className="mt-auto pt-6 border-t border-outline-variant/15 flex-shrink-0">
-        <Link 
-          href="/breathing"
-          className="w-full bg-gradient-to-b from-primary to-primary-container text-white rounded-full py-4 font-serif font-medium active:scale-95 transition-transform shadow-lg shadow-primary/10 flex items-center justify-center"
-        >
-          Start Breathing
-        </Link>
-        
-        <div className="mt-6 flex items-center gap-3 px-2">
+        <div className="flex items-center gap-3 px-2">
           <div className="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant/30 flex items-center justify-center">
             {user?.image ? (
               <img 

@@ -47,7 +47,7 @@ export default function Sanctuary() {
             </div>
             <span className="font-serif font-medium text-on-surface">Journal</span>
           </Link>
-          <Link href="/breathing" className="bg-surface-container-lowest rounded-lg p-6 flex flex-col items-center justify-center gap-4 group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+          <Link href="/resources" className="bg-surface-container-lowest rounded-lg p-6 flex flex-col items-center justify-center gap-4 group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
             <div className="w-14 h-14 rounded-full bg-surface-container-low flex items-center justify-center group-hover:bg-primary-fixed transition-colors">
               <span className="material-symbols-outlined text-primary text-2xl">air</span>
             </div>
