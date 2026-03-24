@@ -5,12 +5,16 @@ import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+import { authClient } from "../lib/auth-client";
+
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
 export function Header() {
   const pathname = usePathname();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
 
   const navItems = [
     { label: "Sanctuary", path: "/sanctuary" },
@@ -54,12 +58,18 @@ export function Header() {
           </button>
 
           {/* User Avatar */}
-          <button className="w-10 h-10 rounded-full border border-outline-variant/30 overflow-hidden hover:scale-105 transition-transform flex-shrink-0">
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrxxQpUtJsNGMBXCJWBqtxlILl0LrMscMBkc_ueXDg-Z71_2wXOdPu5S2LtzVHylmsYhLtkW57mwOyNGDV25fLrJvFXeEALxH4EsOJ62xpCfGBfgmIQ-RRTArcBGwunAH1a0_7IL24TDSnS15DRWWDwguc9NPDF-SHXcH7AzeSRE87Y5V7EZ0UDR9t0zexsOZF6Mb0N15w-JRk8zF7r0xr0qZuafOdqf7GHAxy34sdhnUDYjRncwSkgrQsF8KIPtQYsWslWcYTzFHX"
-              alt="User profile"
-              className="w-full h-full object-cover"
-            />
+          <button className="w-10 h-10 rounded-full border border-outline-variant/30 overflow-hidden hover:scale-105 transition-transform flex-shrink-0 flex items-center justify-center bg-surface-container-high">
+            {user?.image ? (
+              <img
+                src={user.image}
+                alt={user.name || "User profile"}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-primary font-bold text-sm">
+                {user?.name?.[0].toUpperCase() || "S"}
+              </span>
+            )}
           </button>
         </div>
       </div>
