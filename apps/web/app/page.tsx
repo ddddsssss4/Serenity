@@ -1,10 +1,27 @@
 "use client";
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { authClient } from '../lib/auth-client';
 
 export default function Landing() {
   const [isLoading, setIsLoading] = useState(false);
+  const { data: session, isPending } = authClient.useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (session) {
+      router.push('/sanctuary');
+    }
+  }, [session, router]);
+
+  if (isPending || session) {
+    return (
+      <div className="min-h-screen bg-surface flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+      </div>
+    );
+  }
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
