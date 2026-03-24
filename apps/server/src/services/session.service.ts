@@ -8,11 +8,11 @@ export interface RecentSession {
 }
 
 /**
- * Fetch the last 3 sessions for a user with their summary and
+ * Fetch the last 3 conversations for a user with their summary and
  * last 2 messages each.
  */
 export async function recentSessions(userId: string): Promise<RecentSession[]> {
-  const sessions = await prisma.session.findMany({
+  const conversations = await prisma.conversation.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
     take: 3,
@@ -25,7 +25,7 @@ export async function recentSessions(userId: string): Promise<RecentSession[]> {
   });
 
   const result: RecentSession[] = [];
-  for (const s of sessions) {
+  for (const s of conversations) {
     const msgs = ((s.messages ?? []) as Array<{ role: string; content: string; timestamp: string }>);
     result.push({
       id: s.id as string,
@@ -38,53 +38,53 @@ export async function recentSessions(userId: string): Promise<RecentSession[]> {
 }
 
 /**
- * Create a new session for the user. Returns the session ID.
+ * Create a new conversation for the user. Returns the conversation ID.
  */
 export async function createSession(userId: string): Promise<string> {
-  const session = await prisma.session.create({
+  const conversation = await prisma.conversation.create({
     data: {
       userId,
       messages: [],
     },
     select: { id: true },
   });
-  return session.id;
+  return conversation.id;
 }
 
 /**
- * Append a message object to a session's messages array.
+ * Append a message object to a conversation's messages array.
  */
 export async function appendMessage(
   sessionId: string,
   message: { role: string; content: string; timestamp?: string }
 ): Promise<void> {
-  const session = await prisma.session.findUnique({
+  const conversation = await prisma.conversation.findUnique({
     where: { id: sessionId },
     select: { messages: true },
   });
 
-  if (!session) return;
+  if (!conversation) return;
 
-  const messages = (session.messages as object[]) || [];
+  const messages = (conversation.messages as object[]) || [];
   messages.push({
     ...message,
     timestamp: message.timestamp || new Date().toISOString(),
   });
 
-  await prisma.session.update({
+  await prisma.conversation.update({
     where: { id: sessionId },
     data: { messages },
   });
 }
 
 /**
- * Update the LLM-generated summary for a session.
+ * Update the LLM-generated summary for a conversation.
  */
 export async function updateSessionSummary(
   sessionId: string,
   summary: string
 ): Promise<void> {
-  await prisma.session.update({
+  await prisma.conversation.update({
     where: { id: sessionId },
     data: { summary },
   });

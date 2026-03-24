@@ -10,25 +10,82 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── App Models ───────────────────────────────────────────────────────────────
+// ─── Better Auth Models ──────────────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  
+  accounts      Account[]
+  sessions      Session[]
+  
+  // App-specific relations
+  conversations Conversation[]
+  memories      Memory[]
 
-  sessions Session[]
-  memories Memory[]
+  @@map("user")
 }
 
 model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("account")
+}
+
+model Verification {
+  id         String    @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("verification")
+}
+
+// ─── App Models ───────────────────────────────────────────────────────────────
+
+model Conversation {
   id        String   @id @default(uuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   messages  Json[]   // array of {role, content, timestamp}
   createdAt DateTime @default(now())
   summary   String?  // LLM-generated summary of this session
+
+  @@map("conversation")
 }
 
 model Memory {
@@ -42,60 +99,6 @@ model Memory {
   people     String[] // ['boyfriend', 'mom', 'coworker']
   importance Int      @default(5) // 1-10, LLM-scored
   createdAt  DateTime @default(now())
-}
 
-// ─── Better-Auth Tables ───────────────────────────────────────────────────────
-
-model account {
-  id                    String    @id
-  accountId             String
-  providerId            String
-  userId                String
-  user                  betterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  password              String?
-  createdAt             DateTime
-  updatedAt             DateTime
-}
-
-model betterAuthSession {
-  id        String   @id
-  expiresAt DateTime
-  token     String   @unique
-  createdAt DateTime
-  updatedAt DateTime
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      betterAuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("auth_session")
-}
-
-model betterAuthUser {
-  id            String    @id
-  name          String
-  email         String    @unique
-  emailVerified Boolean
-  image         String?
-  createdAt     DateTime
-  updatedAt     DateTime
-  sessions      betterAuthSession[]
-  accounts      account[]
-
-  @@map("auth_user")
-}
-
-model verification {
-  id         String    @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
+  @@map("memory")
 }

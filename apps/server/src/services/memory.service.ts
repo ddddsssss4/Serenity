@@ -228,21 +228,21 @@ ${transcript}`);
     ],
   });
 
-  // Step 5: Append message to session
-  const session = await prisma.session.findUnique({
+  // Step 5: Append message to conversation
+  const conversation = await prisma.conversation.findUnique({
     where: { id: sessionId },
     select: { messages: true },
   });
 
-  if (session) {
-    const messages = (session.messages as object[]) || [];
+  if (conversation) {
+    const messages = (conversation.messages as object[]) || [];
     messages.push({
       role: "assistant_summary",
       content: extracted.summary,
       timestamp: new Date().toISOString(),
     });
 
-    await prisma.session.update({
+    await prisma.conversation.update({
       where: { id: sessionId },
       data: { messages },
     });
