@@ -162,18 +162,22 @@ export async function saveMemoryAsync(
   const extractionStart = performance.now();
   const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
   
-  const extractionResponse = await model.generateContent(`Extract from this conversation:
-1. A concise memory summary (1-2 sentences of what she shared)
-2. Tags (array, pick from: relationship, anxiety, sleep, work, family, health, grief, friendship, self-esteem, goals)
-3. Emotion (single word)
-4. People mentioned (first names or roles only)
-5. Importance score 1-10 (10 = major life event, 1 = passing comment)
-Return as JSON only, no other text.
+  const extractionResponse = await model.generateContent(`Extract structured data from this conversation and return ONLY valid JSON with EXACTLY these field names:
+{
+  "summary": "1-2 sentences of what she shared",
+  "tags": ["one or more from: relationship, anxiety, sleep, work, family, health, grief, friendship, self-esteem, goals"],
+  "emotion": "single word emotion",
+  "people": ["first names or roles only"],
+  "importance": 5
+}
+
+Importance scale: 1-10 (10 = major life event, 1 = passing comment). No extra text, no markdown fences, just the JSON object.
 
 Conversation:
 ${transcript}`);
 
   const rawText = extractionResponse.response.text();
+  console.log(`Raw Memory Extraction: ${rawText}`);
   console.log(`⏱️ Memory Extraction (LLM): ${(performance.now() - extractionStart).toFixed(2)}ms`);
 
   let extracted: ExtractedMemory;
@@ -183,7 +187,22 @@ ${transcript}`);
       .replace(/```json\n?/g, "")
       .replace(/```\n?/g, "")
       .trim();
-    extracted = JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
+
+    // Normalize field names — LLMs sometimes use different naming conventions
+    extracted = {
+      summary: parsed.summary || parsed.memory_summary || parsed.content || "",
+      tags: parsed.tags || [],
+      emotion: parsed.emotion || "",
+      people: parsed.people || parsed.people_mentioned || [],
+      importance: parsed.importance ?? parsed.importance_score ?? 5,
+    };
+
+    if (!extracted.summary) {
+      console.error("Parsed JSON missing summary field:", parsed);
+      return;
+    }
+
     console.log(`✅ LLM Extraction Success: "${extracted.summary.slice(0, 50)}..." [emotion: ${extracted.emotion}, importance: ${extracted.importance}]`);
   } catch {
     console.error("Failed to parse memory extraction JSON:", rawText);
