@@ -28,7 +28,7 @@ export default function Landing() {
     try {
       await authClient.signIn.social({
         provider: 'google',
-        callbackURL: 'http://localhost:3000/sanctuary',
+        callbackURL: 'https://serenitywellness.vercel.app/sanctuary',
       });
     } catch (err) {
       console.error('Google sign-in failed:', err);
@@ -64,13 +64,13 @@ export default function Landing() {
           </div>
 
           <div className="space-y-4">
-            <Link 
-              href="/sanctuary" 
-              className="w-full py-4 bg-primary text-on-primary rounded-full font-medium hover:bg-primary/90 transition-colors shadow-sm flex items-center justify-center gap-2"
+            <button 
+              disabled
+              className="w-full py-4 bg-primary text-on-primary rounded-full font-medium opacity-60 cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
             >
               <span>Begin Journey</span>
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </Link>
+            </button>
             
             <button 
               onClick={handleGoogleSignIn}
@@ -93,7 +93,10 @@ export default function Landing() {
               )}
             </button>
             
-            <button className="w-full py-4 bg-transparent border border-outline text-on-surface rounded-full font-medium hover:bg-surface-variant/50 transition-colors">
+            <button 
+              disabled
+              className="w-full py-4 bg-transparent border border-outline text-on-surface rounded-full font-medium opacity-60 cursor-not-allowed"
+            >
               Continue Anonymously
             </button>
           </div>
