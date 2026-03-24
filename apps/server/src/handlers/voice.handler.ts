@@ -188,6 +188,8 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
       elevenLabsWs.on("message", async (data: WebSocket.RawData) => {
         try {
           const msg = JSON.parse(data.toString());
+          // Log exactly what ElevenLabs is sending us
+          console.log(`[ElevenLabs Message Type] ${msg.type}`);
 
           if (msg.type === "user_transcript" && msg.user_transcript_event) {
             const transcript: string = msg.user_transcript_event.user_transcript;
@@ -252,6 +254,7 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
         const msg = JSON.parse(data.toString());
 
         if (msg.type === "mic_open") {
+          console.log("📨 Received mic_open from client, starting context load...");
           const lastMessage: string = msg.lastMessage || "";
           const startTime = Date.now();
 
@@ -356,6 +359,7 @@ async function handleGeminiStreaming(
             const researchResult = await searchResearch(query, topic);
             console.log(`⏱️ Voice Firecrawl Search: ${(performance.now() - fcStart).toFixed(2)}ms`);
             console.log(`✅ Voice Research Success: Loaded ${researchResult.length} characters of research on "${topic}"`);
+            console.log(`🔍 [Research Detail] Content: ${researchResult.substring(0, 1000)}${researchResult.length > 1000 ? "..." : ""}`);
             
             // Send the tool response back (re-entering loop)
             const responseResult = await chat.sendMessageStream([
