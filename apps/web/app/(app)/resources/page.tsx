@@ -3,10 +3,6 @@
 import Link from "next/link";
 
 export default function BreathingPage() {
-  const handleEmergencyExit = () => {
-    window.location.href = "https://www.google.com";
-  };
-
   return (
     <div className="relative min-h-screen bg-background text-on-surface font-sans antialiased selection:bg-primary-fixed selection:text-on-primary-fixed">
       <style dangerouslySetInnerHTML={{ __html: `
@@ -18,17 +14,6 @@ export default function BreathingPage() {
             animation: breathe 8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
         }
       `}} />
-
-      {/* Emergency Exit Button (Top Level Priority) */}
-      <div className="fixed top-8 right-8 z-[60]">
-        <button 
-          onClick={handleEmergencyExit}
-          className="bg-error text-on-error px-8 py-4 rounded-xl font-bold flex items-center gap-3 shadow-[40px_0_60px_-10px_rgba(147,0,10,0.2)] hover:scale-95 transition-all duration-300"
-        >
-          <span className="material-symbols-outlined">logout</span>
-          EMERGENCY EXIT
-        </button>
-      </div>
 
       {/* Main Content Canvas */}
       <div className="max-w-6xl mx-auto space-y-24 py-12 lg:py-20">
