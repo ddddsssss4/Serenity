@@ -133,11 +133,13 @@ router.post("/chat", requireAuth, async (req, res) => {
     }
 
     // 2. Load user context in parallel — memories + recent sessions
+    const contextStart = performance.now();
     const [vectorResults, sessions] = await Promise.all([
       vectorSearch(userId, message),
       recentSessions(userId),
     ]);
     const memories = await tagPatternPull(userId, vectorResults);
+    console.log(`⏱️ Context Retrieval (Qdrant + Prisma): ${(performance.now() - contextStart).toFixed(2)}ms`);
 
     // 3. Build system prompt with her context
     const systemPrompt = buildSystemPrompt(memories, sessions, userName);
@@ -157,6 +159,7 @@ router.post("/chat", requireAuth, async (req, res) => {
     let continueLoop = true;
 
     // Send message and handle potential tool calls
+    const llmStart = performance.now();
     let result = await chat.sendMessage(message);
 
     while (continueLoop) {
@@ -171,9 +174,12 @@ router.post("/chat", requireAuth, async (req, res) => {
           const topic = (call.args as any).topic as string;
 
           console.log(`🔍 Firecrawl search: "${query}"`);
+          const fcStart = performance.now();
           const researchResult = await searchResearch(query, topic);
+          console.log(`⏱️ Firecrawl Search: ${(performance.now() - fcStart).toFixed(2)}ms`);
 
           // Feed tool result back to Gemini
+          const toolFollowUpStart = performance.now();
           result = await chat.sendMessage([
             {
               functionResponse: {
@@ -182,12 +188,14 @@ router.post("/chat", requireAuth, async (req, res) => {
               },
             },
           ]);
+          console.log(`⏱️ LLM Tool Follow-up: ${(performance.now() - toolFollowUpStart).toFixed(2)}ms`);
         } else {
           continueLoop = false;
         }
       } else {
         try {
           fullReply = response.text();
+          console.log(`⏱️ LLM Total Response Time: ${(performance.now() - llmStart).toFixed(2)}ms`);
         } catch {
           fullReply = "I'm here for you. Could you tell me more?";
         }

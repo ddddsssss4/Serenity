@@ -159,6 +159,7 @@ export async function saveMemoryAsync(
   transcript: string
 ): Promise<void> {
   // Step 1: Extract structured memory from Gemini (cheap model)
+  const extractionStart = performance.now();
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
   
   const extractionResponse = await model.generateContent(`Extract from this conversation:
@@ -173,6 +174,7 @@ Conversation:
 ${transcript}`);
 
   const rawText = extractionResponse.response.text();
+  console.log(`⏱️ Memory Extraction (LLM): ${(performance.now() - extractionStart).toFixed(2)}ms`);
 
   let extracted: ExtractedMemory;
   try {
@@ -205,9 +207,12 @@ ${transcript}`);
   });
 
   // Step 3: Embed the summary
+  const embeddingStart = performance.now();
   const embedding = await embedText(extracted.summary);
+  console.log(`⏱️ Embedding (LLM): ${(performance.now() - embeddingStart).toFixed(2)}ms`);
 
   // Step 4: Upsert into Qdrant
+  const qdrantStart = performance.now();
   await qdrant.upsert(COLLECTION_NAME, {
     wait: true,
     points: [
@@ -227,6 +232,7 @@ ${transcript}`);
       },
     ],
   });
+  console.log(`⏱️ Qdrant Upsert: ${(performance.now() - qdrantStart).toFixed(2)}ms`);
 
   // Step 5: Append message to conversation
   const conversation = await prisma.conversation.findUnique({

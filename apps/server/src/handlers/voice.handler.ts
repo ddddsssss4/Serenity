@@ -192,10 +192,12 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
           if (msg.type === "user_transcript" && msg.user_transcript_event) {
             const transcript: string = msg.user_transcript_event.user_transcript;
 
-            state.conversationHistory.push({
-              role: "user",
+            const userTurn = {
+              role: "user" as const,
               parts: [{ text: transcript }],
-            });
+              _startTime: performance.now(),
+            };
+            state.conversationHistory.push(userTurn as any);
 
             await appendMessage(state.sessionId, {
               role: "user",
@@ -344,7 +346,9 @@ async function handleGeminiStreaming(
             
             clientWs.send(JSON.stringify({ type: "researching", query }));
             
+            const fcStart = performance.now();
             const researchResult = await searchResearch(query, topic);
+            console.log(`⏱️ Voice Firecrawl Search: ${(performance.now() - fcStart).toFixed(2)}ms`);
             
             // Send the tool response back (re-entering loop)
             const responseResult = await chat.sendMessageStream([
@@ -404,6 +408,9 @@ async function handleGeminiStreaming(
     content: fullAssistantResponse,
   });
 
+  if ((lastUserTurn as any)._startTime) {
+    console.log(`⏱️ Voice Turn Total Time (LLM Streaming + Processing): ${(performance.now() - (lastUserTurn as any)._startTime).toFixed(2)}ms`);
+  }
   clientWs.send(JSON.stringify({ type: "response_complete" }));
 
   const transcriptForSaving = state.conversationHistory
