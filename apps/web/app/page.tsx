@@ -40,7 +40,7 @@ export default function Landing() {
             </Link>
             
             <button 
-              onClick={() => signIn.social({ provider: 'google', callbackURL: '/sanctuary' })}
+              onClick={() => signIn.social({ provider: 'google', callbackURL: 'http://localhost:3000/sanctuary' })}
               className="w-full py-4 bg-surface-container-highest text-on-surface rounded-full font-medium hover:bg-surface-variant transition-colors flex items-center justify-center gap-3"
             >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
