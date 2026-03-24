@@ -1,4 +1,6 @@
+"use client";
 import Link from 'next/link';
+import { signIn } from '../lib/auth-client';
 
 export default function Landing() {
   return (
@@ -37,7 +39,10 @@ export default function Landing() {
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </Link>
             
-            <button className="w-full py-4 bg-surface-container-highest text-on-surface rounded-full font-medium hover:bg-surface-variant transition-colors flex items-center justify-center gap-3">
+            <button 
+              onClick={() => signIn.social({ provider: 'google', callbackURL: '/sanctuary' })}
+              className="w-full py-4 bg-surface-container-highest text-on-surface rounded-full font-medium hover:bg-surface-variant transition-colors flex items-center justify-center gap-3"
+            >
               <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
               <span>Continue with Google</span>
             </button>
