@@ -24,7 +24,9 @@ export default function PersonalVoiceAgent() {
   const [transcript, setTranscript] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const wsRef = useRef<WebSocket | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const processorRef = useRef<ScriptProcessorNode | null>(null);
   const audioQueueRef = useRef<HTMLAudioElement[]>([]);
 
   const stopSession = () => {
@@ -32,10 +34,18 @@ export default function PersonalVoiceAgent() {
     setStatus('idle');
     wsRef.current?.close();
     wsRef.current = null;
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current = null;
+    
+    if (processorRef.current) {
+      processorRef.current.disconnect();
+      processorRef.current = null;
+    }
+    if (audioContextRef.current) {
+      audioContextRef.current.close().catch(console.error);
+      audioContextRef.current = null;
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(t => t.stop());
+      mediaStreamRef.current = null;
     }
     // Drain audio queue
     audioQueueRef.current.forEach(a => { a.pause(); a.src = ''; });
@@ -56,6 +66,7 @@ export default function PersonalVoiceAgent() {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 },
       });
+      mediaStreamRef.current = stream;
 
       // Browser automatically sends the better-auth session cookie
       // in the WebSocket upgrade request headers — no token needed in URL
@@ -130,20 +141,45 @@ export default function PersonalVoiceAgent() {
         setStatus('idle');
       };
 
-      // Start MediaRecorder — sends audio chunks to server → ElevenLabs
-      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
-          const reader = new FileReader();
-          reader.readAsDataURL(e.data);
-          reader.onloadend = () => {
-            const base64 = (reader.result as string).split(',')[1];
-            socket.send(JSON.stringify({ user_audio_chunk: base64 }));
-          };
+      // Setup Web Audio API to capture raw 16kHz PCM
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const audioCtx = new AudioCtx({ sampleRate: 16000 });
+      audioContextRef.current = audioCtx;
+
+      const source = audioCtx.createMediaStreamSource(stream);
+      const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+      processorRef.current = processor;
+
+      processor.onaudioprocess = (e) => {
+        if (socket.readyState !== WebSocket.OPEN) return;
+        
+        const inputData = e.inputBuffer.getChannelData(0);
+        const pcm16 = new Int16Array(inputData.length);
+        
+        // Convert Float32 to Int16
+        for (let i = 0; i < inputData.length; i++) {
+          const val = inputData[i] || 0;
+          const s = Math.max(-1, Math.min(1, val));
+          pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
         }
+
+        // Convert Int16Array to Base64 manually to avoid large string chunking limits
+        const uint8Array = new Uint8Array(pcm16.buffer);
+        let binary = '';
+        for (let i = 0; i < uint8Array.byteLength; i++) {
+          binary += String.fromCharCode(uint8Array[i] || 0);
+        }
+        
+        socket.send(JSON.stringify({ user_audio_chunk: btoa(binary) }));
       };
-      recorder.start(250);
-      mediaRecorderRef.current = recorder;
+
+      // Connect to a muted gain node to prevent local echoing
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = 0;
+      
+      source.connect(processor);
+      processor.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
 
     } catch (err: any) {
       console.error('Mic error:', err);
