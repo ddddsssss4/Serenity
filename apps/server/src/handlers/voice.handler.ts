@@ -199,6 +199,9 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
             };
             state.conversationHistory.push(userTurn as any);
 
+            // Notify frontend that we are now processing their speech
+            clientWs.send(JSON.stringify({ type: "processing" }));
+
             await appendMessage(state.sessionId, {
               role: "user",
               content: transcript,

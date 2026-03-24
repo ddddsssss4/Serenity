@@ -4,16 +4,19 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { authClient } from '../../../lib/auth-client';
 
-type Status = 'idle' | 'connecting' | 'listening' | 'thinking' | 'responding' | 'error';
+type Status = 'idle' | 'connecting' | 'listening' | 'processing' | 'thinking' | 'responding' | 'error';
 
 const STATUS_LABEL: Record<Status, string> = {
   idle: 'Tap the mic to begin',
   connecting: 'Connecting...',
   listening: 'Listening...',
+  processing: 'Understanding your context...',
   thinking: 'Serenity is thinking...',
   responding: 'Serenity is speaking...',
   error: 'Connection error. Try again.',
 };
+
+const PROCESSING_TEXTS = ['Understanding your context...', 'Bringing best advice...'];
 
 export default function PersonalVoiceAgent() {
   const { data: session } = authClient.useSession();
@@ -21,6 +24,7 @@ export default function PersonalVoiceAgent() {
 
   const [isListening, setIsListening] = useState(false);
   const [status, setStatus] = useState<Status>('idle');
+  const [processingTextIndex, setProcessingTextIndex] = useState(0);
   const [transcript, setTranscript] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const wsRef = useRef<WebSocket | null>(null);
@@ -49,6 +53,18 @@ export default function PersonalVoiceAgent() {
       mediaStreamRef.current = null;
     }
   };
+
+  // Rotate text when in processing state
+  useEffect(() => {
+    if (status === 'processing') {
+      const interval = setInterval(() => {
+        setProcessingTextIndex(prev => (prev + 1) % PROCESSING_TEXTS.length);
+      }, 2500);
+      return () => clearInterval(interval);
+    } else {
+      setProcessingTextIndex(0);
+    }
+  }, [status]);
 
   const toggleListen = async () => {
     if (isListening) {
@@ -88,6 +104,10 @@ export default function PersonalVoiceAgent() {
         if (data.type === 'context_loaded') {
           console.log(`✅ Context loaded: ${data.memoryCount} memories`);
           setStatus('listening');
+        }
+
+        if (data.type === 'processing') {
+          setStatus('processing');
         }
 
         if (data.type === 'researching') {
@@ -272,11 +292,11 @@ export default function PersonalVoiceAgent() {
         {/* Status Label */}
         <div className="mt-8 flex flex-col items-center gap-2">
           <div className="flex items-center gap-2 text-secondary/70">
-            {(status === 'listening' || status === 'responding' || status === 'thinking') && (
-              <span className={`w-2 h-2 rounded-full ${status === 'thinking' ? 'bg-amber-400 animate-pulse' : status === 'responding' ? 'bg-tertiary animate-ping' : 'bg-primary animate-pulse'}`}></span>
+            {(status === 'listening' || status === 'responding' || status === 'thinking' || status === 'processing') && (
+              <span className={`w-2 h-2 rounded-full ${(status === 'thinking' || status === 'processing') ? 'bg-amber-400 animate-pulse' : status === 'responding' ? 'bg-tertiary animate-ping' : 'bg-primary animate-pulse'}`}></span>
             )}
             <span className="text-xs font-medium uppercase tracking-widest font-sans">
-              {STATUS_LABEL[status]}
+              {status === 'processing' ? PROCESSING_TEXTS[processingTextIndex] : STATUS_LABEL[status]}
             </span>
           </div>
           {errorMsg && (
