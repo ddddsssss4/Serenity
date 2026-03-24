@@ -1,13 +1,17 @@
 "use client";
 
 import Link from 'next/link';
+import { authClient } from '../../../lib/auth-client';
 
 export default function Sanctuary() {
+  const { data: session } = authClient.useSession();
+  const firstName = session?.user?.name?.split(' ')[0] || 'there';
+
   return (
     <main className="p-12">
       {/* Header Section */}
       <header className="mb-16">
-        <h2 className="text-6xl font-serif text-primary mb-4 leading-tight tracking-tight">Good morning, Emma.</h2>
+        <h2 className="text-6xl font-serif text-primary mb-4 leading-tight tracking-tight">Good morning, {firstName}.</h2>
         <p className="text-secondary text-lg font-sans max-w-xl">Take a deep breath. Today is a fresh canvas for your peace of mind.</p>
       </header>
       
