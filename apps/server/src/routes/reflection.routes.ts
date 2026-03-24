@@ -140,6 +140,10 @@ router.post("/chat", requireAuth, async (req, res) => {
     ]);
     const memories = await tagPatternPull(userId, vectorResults);
     console.log(`⏱️ Context Retrieval (Qdrant + Prisma): ${(performance.now() - contextStart).toFixed(2)}ms`);
+    console.log(`✅ Context Loaded: ${memories.length} memories, ${sessions.length} recent sessions [userId: ${userId}]`);
+    if (memories && memories.length > 0 && memories[0]) {
+      console.log(`🔍 Memory Peek: "${memories[0].content.slice(0, 60)}..." [tags: ${memories[0].tags.join(", ")}]`);
+    }
 
     // 3. Build system prompt with her context
     const systemPrompt = buildSystemPrompt(memories, sessions, userName);
@@ -149,7 +153,7 @@ router.post("/chat", requireAuth, async (req, res) => {
 
     // 5. Call Gemini with Firecrawl tool support
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       systemInstruction: systemPrompt,
       tools: [searchResearchTool as any],
     });
@@ -189,6 +193,7 @@ router.post("/chat", requireAuth, async (req, res) => {
             },
           ]);
           console.log(`⏱️ LLM Tool Follow-up: ${(performance.now() - toolFollowUpStart).toFixed(2)}ms`);
+          console.log(`✅ Research tool success: Feed research data back to Gemini session`);
         } else {
           continueLoop = false;
         }
@@ -196,6 +201,7 @@ router.post("/chat", requireAuth, async (req, res) => {
         try {
           fullReply = response.text();
           console.log(`⏱️ LLM Total Response Time: ${(performance.now() - llmStart).toFixed(2)}ms`);
+          console.log(`✅ LLM Processing Success: Generated response of ${fullReply.length} chars`);
         } catch {
           fullReply = "I'm here for you. Could you tell me more?";
         }

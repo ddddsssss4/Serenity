@@ -160,7 +160,7 @@ export async function saveMemoryAsync(
 ): Promise<void> {
   // Step 1: Extract structured memory from Gemini (cheap model)
   const extractionStart = performance.now();
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+  const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
   
   const extractionResponse = await model.generateContent(`Extract from this conversation:
 1. A concise memory summary (1-2 sentences of what she shared)
@@ -184,6 +184,7 @@ ${transcript}`);
       .replace(/```\n?/g, "")
       .trim();
     extracted = JSON.parse(cleaned);
+    console.log(`✅ LLM Extraction Success: "${extracted.summary.slice(0, 50)}..." [emotion: ${extracted.emotion}, importance: ${extracted.importance}]`);
   } catch {
     console.error("Failed to parse memory extraction JSON:", rawText);
     return;
@@ -210,6 +211,7 @@ ${transcript}`);
   const embeddingStart = performance.now();
   const embedding = await embedText(extracted.summary);
   console.log(`⏱️ Embedding (LLM): ${(performance.now() - embeddingStart).toFixed(2)}ms`);
+  console.log(`✅ Embedding Success: Vector generated [dims: ${embedding.length}]`);
 
   // Step 4: Upsert into Qdrant
   const qdrantStart = performance.now();
@@ -233,6 +235,7 @@ ${transcript}`);
     ],
   });
   console.log(`⏱️ Qdrant Upsert: ${(performance.now() - qdrantStart).toFixed(2)}ms`);
+  console.log(`✅ Qdrant Upsert Success: Point ${qdrantId} stored in collection "${COLLECTION_NAME}"`);
 
   // Step 5: Append message to conversation
   const conversation = await prisma.conversation.findUnique({

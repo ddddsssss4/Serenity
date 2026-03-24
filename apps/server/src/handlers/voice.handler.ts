@@ -266,6 +266,9 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
           console.log(
             `⚡ Memory fetch: ${Date.now() - startTime}ms | memories: ${state.memories.length}`
           );
+          if (state.memories && state.memories.length > 0 && state.memories[0]) {
+            console.log(`✅ Voice Context Loaded: ${state.memories.length} memories | Top Memory: "${state.memories[0].content.slice(0, 50)}..."`);
+          }
 
           clientWs.send(
             JSON.stringify({
@@ -311,7 +314,7 @@ async function handleGeminiStreaming(
   let fullAssistantResponse = "";
 
   const chatModel = genAI.getGenerativeModel({
-    model: "gemini-2.5-flash",
+    model: "gemini-3-flash-preview",
     systemInstruction: systemPrompt,
     tools: [searchResearchTool as any],
   });
@@ -349,6 +352,7 @@ async function handleGeminiStreaming(
             const fcStart = performance.now();
             const researchResult = await searchResearch(query, topic);
             console.log(`⏱️ Voice Firecrawl Search: ${(performance.now() - fcStart).toFixed(2)}ms`);
+            console.log(`✅ Voice Research Success: Loaded ${researchResult.length} characters of research on "${topic}"`);
             
             // Send the tool response back (re-entering loop)
             const responseResult = await chat.sendMessageStream([
