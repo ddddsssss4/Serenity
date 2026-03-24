@@ -84,7 +84,7 @@ export default function PersonalVoiceAgent() {
 
       // Browser automatically sends the better-auth session cookie
       // in the WebSocket upgrade request headers — no token needed in URL
-      const socket = new WebSocket(`ws://localhost:3001/api/voice/stream`);
+      const socket = new WebSocket(`wss://serenity-593k.onrender.com/api/voice/stream`);
       wsRef.current = socket;
 
       socket.onopen = () => {

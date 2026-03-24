@@ -56,10 +56,10 @@ export default function Reflection() {
     const loadContext = async () => {
       try {
         const [memRes, patRes] = await Promise.all([
-          fetch(`http://localhost:3001/api/memories/${userId}?limit=5`, {
+          fetch(`https://serenity-593k.onrender.com/api/memories/${userId}?limit=5`, {
             credentials: 'include',
           }),
-          fetch(`http://localhost:3001/api/patterns/${userId}`, {
+          fetch(`https://serenity-593k.onrender.com/api/patterns/${userId}`, {
             credentials: 'include',
           }),
         ]);
@@ -111,7 +111,7 @@ export default function Reflection() {
     setIsResearching(false);
 
     try {
-      const res = await fetch('http://localhost:3001/api/reflection/chat', {
+      const res = await fetch('https://serenity-593k.onrender.com/api/reflection/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

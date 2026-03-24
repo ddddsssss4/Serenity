@@ -24,7 +24,7 @@ export default function Journal() {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:3001/api/journal', {
+      const res = await fetch('https://serenity-593k.onrender.com/api/journal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

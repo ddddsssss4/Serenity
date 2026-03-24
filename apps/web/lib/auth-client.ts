@@ -2,7 +2,7 @@
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
-    baseURL: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001"
+    baseURL: process.env.NEXT_PUBLIC_BASE_URL || "https://serenity-593k.onrender.com"
 }) as any;
 
 export const signIn = authClient.signIn;
