@@ -3,37 +3,12 @@ import { auth } from "../lib/auth.js";
 import { requireAuth } from "../middleware/auth.middleware.js";
 import { prisma } from "../lib/prisma.js";
 
-const router = Router();
+const router: Router = Router();
 
-// Mount better-auth handler for all /api/auth/* routes
-router.all("/auth/*", async (req, res) => {
-  // Convert Express req to a standard Request object for better-auth
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  const headers = new Headers(req.headers as Record<string, string>);
+import { toNodeHandler } from "better-auth/node";
 
-  let body: string | undefined;
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    body = JSON.stringify(req.body);
-    headers.set("content-type", "application/json");
-  }
-
-  const response = await auth.handler(
-    new Request(url.toString(), {
-      method: req.method,
-      headers,
-      body,
-    })
-  );
-
-  // Forward status and headers
-  res.status(response.status);
-  response.headers.forEach((value, key) => {
-    res.setHeader(key, value);
-  });
-
-  const text = await response.text();
-  res.send(text);
-});
+// Mount better-auth handler for all routes under this router
+router.all("/*", toNodeHandler(auth));
 
 /**
  * POST /api/auth/verify
