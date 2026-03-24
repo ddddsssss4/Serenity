@@ -43,23 +43,43 @@ export async function requireAuth(
 
 /**
  * WebSocket auth: validate token from query params or headers.
+ * Falls back to cookie-based session if no Bearer token is provided.
  * Returns userId if valid, null if not.
  */
 export async function verifyWsToken(
-  token: string
+  token: string,
+  cookieHeader?: string
 ): Promise<{ userId: string; email: string; name: string } | null> {
   try {
-    const session = await auth.api.getSession({
-      headers: { authorization: `Bearer ${token}` },
-    });
+    // Primary: Bearer token from query string
+    if (token) {
+      const session = await auth.api.getSession({
+        headers: { authorization: `Bearer ${token}` },
+      });
+      if (session?.user) {
+        return {
+          userId: session.user.id,
+          email: session.user.email,
+          name: session.user.name || "there",
+        };
+      }
+    }
 
-    if (!session?.user) return null;
+    // Fallback: cookie from the upgrade request (works in dev since cookie is sent)
+    if (cookieHeader) {
+      const session = await auth.api.getSession({
+        headers: { cookie: cookieHeader },
+      });
+      if (session?.user) {
+        return {
+          userId: session.user.id,
+          email: session.user.email,
+          name: session.user.name || "there",
+        };
+      }
+    }
 
-    return {
-      userId: session.user.id,
-      email: session.user.email,
-      name: session.user.name || "there",
-    };
+    return null;
   } catch {
     return null;
   }

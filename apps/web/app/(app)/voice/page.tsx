@@ -57,11 +57,9 @@ export default function PersonalVoiceAgent() {
         audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 16000 },
       });
 
-      // Get better-auth session token from the API
-      const sessionData = await authClient.getSession();
-      const token = (sessionData as any)?.token || '';
-
-      const socket = new WebSocket(`ws://localhost:3001/api/voice/stream?token=${encodeURIComponent(token)}`);
+      // Browser automatically sends the better-auth session cookie
+      // in the WebSocket upgrade request headers — no token needed in URL
+      const socket = new WebSocket(`ws://localhost:3001/api/voice/stream`);
       wsRef.current = socket;
 
       socket.onopen = () => {

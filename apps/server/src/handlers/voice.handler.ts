@@ -154,7 +154,7 @@ export function createVoiceWebSocketServer(server: Server): WebSocketServer {
       request.headers["sec-websocket-protocol"]?.split(", ")[1] ||
       "";
 
-    const verified = await verifyWsToken(token);
+    const verified = await verifyWsToken(token, request.headers.cookie);
     if (!verified) {
       clientWs.send(JSON.stringify({ type: "error", message: "Unauthorized" }));
       clientWs.close(1008, "Unauthorized");
