@@ -7,6 +7,7 @@ import { authRouter } from "./routes/auth.routes.js";
 import { memoriesRouter } from "./routes/memory.routes.js";
 import { journalRouter } from "./routes/journal.routes.js";
 import { patternsRouter } from "./routes/patterns.routes.js";
+import { reflectionRouter } from "./routes/reflection.routes.js";
 import { createVoiceWebSocketServer } from "./handlers/voice.handler.js";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -51,6 +52,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/memories", memoriesRouter);
 app.use("/api/journal", journalRouter);
 app.use("/api/patterns", patternsRouter);
+app.use("/api/reflection", reflectionRouter);
 
 // 404 handler
 app.use((_req, res) => {
