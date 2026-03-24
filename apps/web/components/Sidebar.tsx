@@ -18,6 +18,7 @@ export function Sidebar() {
     { icon: 'spa', label: 'Sanctuary', path: '/sanctuary', fill: true },
     { icon: 'auto_stories', label: 'Journal', path: '/journal' },
     { icon: 'self_improvement', label: 'Guided Reflection', path: '/reflection' },
+    { icon: 'mic', label: 'Personal Voice Agent', path: '/voice' },
     { icon: 'groups', label: 'Community', path: '/community' },
     { icon: 'library_books', label: 'Resources', path: '/resources' },
   ];
