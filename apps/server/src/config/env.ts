@@ -11,6 +11,8 @@ const envSchema = z.object({
   QDRANT_URL: z.string().url(),
   QDRANT_API_KEY: z.string().min(1),
   PORT: z.coerce.number().default(3001),
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_SECRET_ID: z.string().min(1),
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),

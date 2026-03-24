@@ -22,6 +22,12 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: ["http://localhost:3000", "http://localhost:3001"],
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_SECRET_ID,
+    },
+  },
 });
 
 export type Session = typeof auth.$Infer.Session;
