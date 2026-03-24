@@ -101,45 +101,53 @@ export default function PersonalVoiceAgent() {
         }
 
         if (data.type === 'audio' && data.audio_event?.audio_base_64) {
-          // Use Web Audio API for gapless, zero-lag playback of ElevenLabs response
           const playChunk = async (b64: string) => {
-            try {
-              // Ensure AudioContext is alive
-              const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-              if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
-                audioContextRef.current = new AudioCtx({ sampleRate: 24000 });
-              }
-              // Resume context if suspended (browser auto-suspend policy)
-              if (audioContextRef.current.state === 'suspended') {
-                await audioContextRef.current.resume();
-              }
-              const audioCtx = audioContextRef.current;
-
-              // Base64 → ArrayBuffer
-              const binary = atob(b64);
-              const buf = new ArrayBuffer(binary.length);
-              const view = new Uint8Array(buf);
-              for (let i = 0; i < binary.length; i++) view[i] = binary.charCodeAt(i);
-
-              // decodeAudioData handles MP3, Opus, WAV — whatever ElevenLabs sends
-              const audioBuf = await audioCtx.decodeAudioData(buf);
-
-              const now = audioCtx.currentTime;
-              const startAt = Math.max(nextPlayTimeRef.current, now);
-              nextPlayTimeRef.current = startAt + audioBuf.duration;
-
-              const source = audioCtx.createBufferSource();
-              source.buffer = audioBuf;
-              source.connect(audioCtx.destination);
-              source.start(startAt);
-              console.log(`🔊 Audio chunk: ${audioBuf.duration.toFixed(2)}s at T+${startAt.toFixed(2)}s`);
-            } catch (e) {
-              console.error('Audio decode error:', e);
+            // Ensure AudioContext is alive
+            const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+            if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+              // 16kHz matches ElevenLabs default PCM output
+              audioContextRef.current = new AudioCtx({ sampleRate: 16000 });
             }
+            if (audioContextRef.current.state === 'suspended') {
+              await audioContextRef.current.resume();
+            }
+            const audioCtx = audioContextRef.current;
+
+            // Base64 → raw bytes
+            const binary = atob(b64);
+            const uint8 = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) uint8[i] = binary.charCodeAt(i);
+
+            let audioBuf: AudioBuffer;
+
+            try {
+              // First attempt: try decoding as MP3/AAC/OGG (compressed formats)
+              audioBuf = await audioCtx.decodeAudioData(uint8.buffer.slice(0));
+              console.log(`🔊 Decoded compressed audio: ${audioBuf.duration.toFixed(2)}s`);
+            } catch {
+              // Fallback: treat as raw signed 16-bit PCM mono (ElevenLabs default)
+              console.log('🔁 Fallback: decoding as raw Int16 PCM...');
+              const int16 = new Int16Array(uint8.buffer);
+              audioBuf = audioCtx.createBuffer(1, int16.length, 16000);
+              const channelData = audioBuf.getChannelData(0);
+              for (let i = 0; i < int16.length; i++) {
+                channelData[i] = (int16[i] || 0) / 32768; // Int16 → Float32 [-1,1]
+              }
+              console.log(`🔊 PCM decoded: ${audioBuf.duration.toFixed(2)}s (${int16.length} samples)`);
+            }
+
+            const now = audioCtx.currentTime;
+            const startAt = Math.max(nextPlayTimeRef.current, now);
+            nextPlayTimeRef.current = startAt + audioBuf.duration;
+
+            const source = audioCtx.createBufferSource();
+            source.buffer = audioBuf;
+            source.connect(audioCtx.destination);
+            source.start(startAt);
           };
 
           // Fire and forget — non-async handler
-          playChunk(data.audio_event.audio_base_64);
+          playChunk(data.audio_event.audio_base_64).catch(e => console.error('Playback error:', e));
         }
 
         if (data.type === 'response_complete') {
