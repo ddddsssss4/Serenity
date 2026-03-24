@@ -21,7 +21,7 @@ export const auth = betterAuth({
       maxAge: 5 * 60,
     },
   },
-  trustedOrigins: ["http://localhost:3000", "http://localhost:3001"],
+  trustedOrigins: ["http://localhost:3000", "http://localhost:3001", "https://serenitywellness.vercel.app"],
   socialProviders: {
     google: {
       clientId: env.GOOGLE_CLIENT_ID,
