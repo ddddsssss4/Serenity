@@ -1,8 +1,24 @@
 "use client";
 import Link from 'next/link';
-import { signIn } from '../lib/auth-client';
+import { useState } from 'react';
+import { authClient } from '../lib/auth-client';
 
 export default function Landing() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    try {
+      await authClient.signIn.social({
+        provider: 'google',
+        callbackURL: 'http://localhost:3000/sanctuary',
+      });
+    } catch (err) {
+      console.error('Google sign-in failed:', err);
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-8 relative overflow-hidden">
       {/* Background Gradients */}
@@ -40,11 +56,24 @@ export default function Landing() {
             </Link>
             
             <button 
-              onClick={() => signIn.social({ provider: 'google', callbackURL: 'http://localhost:3000/sanctuary' })}
-              className="w-full py-4 bg-surface-container-highest text-on-surface rounded-full font-medium hover:bg-surface-variant transition-colors flex items-center justify-center gap-3"
+              onClick={handleGoogleSignIn}
+              disabled={isLoading}
+              className="w-full py-4 bg-surface-container-highest text-on-surface rounded-full font-medium hover:bg-surface-variant transition-colors flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
-              <span>Continue with Google</span>
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                  </svg>
+                  <span>Signing in...</span>
+                </>
+              ) : (
+                <>
+                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+                  <span>Continue with Google</span>
+                </>
+              )}
             </button>
             
             <button className="w-full py-4 bg-transparent border border-outline text-on-surface rounded-full font-medium hover:bg-surface-variant/50 transition-colors">
