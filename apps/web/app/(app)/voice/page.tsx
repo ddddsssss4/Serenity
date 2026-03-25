@@ -324,7 +324,7 @@ export default function PersonalVoiceAgent() {
       </div>
 
       {/* Floating Controls Dock */}
-      <div className="fixed bottom-12 left-1/2 -translate-x-1/2 ml-36">
+      <div className="fixed bottom-12 left-1/2 -translate-x-1/2 md:ml-36">
         <div className="flex items-center gap-8 bg-surface/80 backdrop-blur-2xl p-4 rounded-3xl shadow-[40px_40px_60px_-10px_rgba(28,28,24,0.06)] border border-outline-variant/15 ring-1 ring-white/20">
           {/* Keyboard → Reflection */}
           <Link
@@ -368,7 +368,7 @@ export default function PersonalVoiceAgent() {
       </div>
 
       {/* Contextual hint */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 ml-36 opacity-30 hover:opacity-100 transition-opacity cursor-default hidden md:block">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 md:ml-36 opacity-30 hover:opacity-100 transition-opacity cursor-default hidden md:block">
         <p className="text-[0.65rem] font-medium uppercase tracking-[0.2em] text-on-surface font-sans">
           {isListening ? 'Tap mic to pause session' : 'Tap mic to start'}
         </p>
