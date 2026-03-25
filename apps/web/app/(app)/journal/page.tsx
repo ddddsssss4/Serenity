@@ -111,6 +111,7 @@ export default function Journal() {
         {/* Writing Area */}
         <div className="flex-1 p-8 md:p-12 relative">
           <textarea
+            id="tour-journal-textarea"
             value={content}
             onChange={(e) => { setContent(e.target.value); setError(''); }}
             placeholder="What is taking up space in your mind today?"

@@ -1,14 +1,39 @@
 "use client";
 
 import Link from 'next/link';
+import { useEffect } from 'react';
 import { authClient } from '../../../lib/auth-client';
+import { useTour } from '../../../lib/useTour';
 
 export default function Sanctuary() {
   const { data: session } = authClient.useSession();
   const firstName = session?.user?.name?.split(' ')[0] || 'there';
+  const { startTour, isTourDone, hasPendingTour } = useTour();
+
+  // Auto-start tour for first-time users
+  useEffect(() => {
+    if (!session) return;
+    const done = typeof window !== 'undefined' ? isTourDone() : true;
+    const pending = typeof window !== 'undefined' ? hasPendingTour() : false;
+    if (!done && !pending) {
+      // First login — kick off tour after a short welcome
+      const t = setTimeout(() => startTour(), 1500);
+      return () => clearTimeout(t);
+    }
+  }, [session]);
 
   return (
     <main className="p-12">
+      {/* Floating Tour Button (always visible) */}
+      <button
+        onClick={startTour}
+        title="Take the Tour"
+        className="fixed top-6 right-6 z-50 flex items-center gap-2 px-4 py-2.5 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-full text-sm font-medium transition-all backdrop-blur-sm"
+      >
+        <span className="material-symbols-outlined text-base">tour</span>
+        Take the Tour
+      </button>
+
       {/* Header Section */}
       <header className="mb-16">
         <h2 className="text-6xl font-serif text-primary mb-4 leading-tight tracking-tight">Good morning, {firstName}.</h2>

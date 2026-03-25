@@ -261,6 +261,7 @@ export default function Reflection() {
         <div className="p-4 bg-surface-container-low/50 border-t border-surface-variant/30">
           <form onSubmit={handleSend} className="relative flex items-center">
             <input
+              id="tour-chat-input"
               ref={inputRef}
               type="text"
               value={input}
@@ -281,7 +282,7 @@ export default function Reflection() {
       </div>
 
       {/* Sidebar — What I Remember */}
-      <aside className="w-80 hidden xl:flex flex-col gap-6">
+      <aside id="tour-memory-panel" className="w-80 hidden xl:flex flex-col gap-6">
         <div className="bg-surface-container rounded-[2rem] p-6 space-y-4">
           <div className="flex items-center gap-3 text-primary mb-2">
             <span className="material-symbols-outlined">memory</span>

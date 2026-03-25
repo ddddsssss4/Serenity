@@ -342,6 +342,7 @@ export default function PersonalVoiceAgent() {
               <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping scale-150 opacity-30"></div>
             )}
             <button
+              id="tour-voice-mic"
               onClick={toggleListen}
               disabled={status === 'connecting'}
               className="w-20 h-20 rounded-full bg-gradient-to-b from-primary to-primary-container text-on-primary flex items-center justify-center shadow-2xl shadow-primary/40 relative z-10 hover:scale-105 transition-all active:scale-90 disabled:opacity-60 disabled:cursor-not-allowed"

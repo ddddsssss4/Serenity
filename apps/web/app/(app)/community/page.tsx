@@ -10,7 +10,7 @@ export default function CommunityPage() {
       {/* Main Content Area */}
       <main className="flex-1 px-8 lg:px-12 py-12 overflow-y-auto">
         {/* Hero Section */}
-        <header className="mb-16 max-w-2xl">
+        <header id="tour-community" className="mb-16 max-w-2xl">
           <h1 className="font-serif text-5xl lg:text-6xl text-primary leading-[1.1] mb-6 tracking-tight">
             Find your tribe in our <span className="italic">tactile sanctuary.</span>
           </h1>
