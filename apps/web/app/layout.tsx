@@ -8,6 +8,8 @@ export const metadata: Metadata = {
 
 import { Header } from "../components/Header";
 
+import { SidebarProvider } from "../components/SidebarContext";
+
 export default function RootLayout({
   children,
 }: {
@@ -22,10 +24,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
       </head>
       <body>
-        <Header />
-        <div className="min-h-[calc(100vh-5rem)] flex flex-col items-stretch">
-          {children}
-        </div>
+        <SidebarProvider>
+          <Header />
+          <div className="min-h-[calc(100vh-5rem)] flex flex-col items-stretch">
+            {children}
+          </div>
+        </SidebarProvider>
       </body>
     </html>
   );

@@ -6,7 +6,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <TourProvider>
       <div className="flex flex-1 w-full bg-surface">
         <Sidebar />
-        <div className="flex-1 ml-72 flex flex-col items-stretch">
+        <div className="flex-1 w-full md:ml-72 flex flex-col items-stretch overflow-x-hidden">
           {children}
           
           {/* Floating Safety Button */}

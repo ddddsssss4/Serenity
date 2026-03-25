@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { authClient } from '../lib/auth-client';
+import { useSidebar } from './SidebarContext';
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -14,6 +15,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = authClient.useSession();
   const user = session?.user;
+  const { isOpen, closeSidebar } = useSidebar();
 
   const isCircleChat = pathname.startsWith('/community/') && pathname !== '/community';
 
@@ -26,10 +28,28 @@ export function Sidebar() {
     { icon: 'library_books', label: 'Resources', path: '/resources' },
   ];
 
+  const overlay = (
+    <div 
+      className={cn(
+        "fixed inset-0 top-20 bg-surface/50 backdrop-blur-sm z-[35] md:hidden transition-opacity duration-300",
+        isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+      )}
+      onClick={closeSidebar}
+    />
+  );
+
+  const sidebarClasses = cn(
+    "h-[calc(100vh-5rem)] w-72 fixed left-0 top-20 flex flex-col bg-surface/80 backdrop-blur-xl border-r border-outline-variant/15 z-[40] shadow-[40px_0_60px_-10px_rgba(28,28,24,0.04)]",
+    "transition-transform duration-300 ease-in-out",
+    isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+  );
+
   if (isCircleChat) {
     return (
-      <aside className="h-[calc(100vh-5rem)] w-72 fixed left-0 top-20 flex flex-col pt-8 bg-surface/80 backdrop-blur-xl border-r border-outline-variant/15 z-[40] shadow-[40px_0_60px_-10px_rgba(28,28,24,0.04)]">
-        <div className="px-6 mb-8">
+      <>
+        {overlay}
+        <aside className={cn(sidebarClasses, "pt-8")}>
+          <div className="px-6 mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>groups</span>
@@ -43,7 +63,7 @@ export function Sidebar() {
 
         <nav className="flex-1 space-y-1 overflow-y-auto pb-4 custom-scrollbar">
           {/* Active Item */}
-          <Link href="/community/morning-glow" className="flex items-center gap-4 bg-surface-container-low text-primary rounded-r-full font-medium py-3 px-6 mr-4 border-l-4 border-primary transition-all">
+          <Link href="/community/morning-glow" onClick={closeSidebar} className="flex items-center gap-4 bg-surface-container-low text-primary rounded-r-full font-medium py-3 px-6 mr-4 border-l-4 border-primary transition-all">
             <span className="material-symbols-outlined">wb_sunny</span>
             <span className="font-sans text-sm tracking-wide">Morning Glow</span>
           </Link>
@@ -81,14 +101,17 @@ export function Sidebar() {
             </Link>
           </div>
         </div>
-      </aside>
+        </aside>
+      </>
     );
   }
 
   // Global Sidebar Layout
   return (
-    <nav className="h-[calc(100vh-5rem)] w-72 fixed left-0 top-20 flex flex-col p-6 bg-surface/80 backdrop-blur-xl border-r border-outline-variant/15 z-[40] shadow-[40px_0_60px_-10px_rgba(28,28,24,0.04)]">
-      <div className="mb-12">
+    <>
+      {overlay}
+      <nav className={cn(sidebarClasses, "p-6")}>
+        <div className="mb-12">
         <h1 className="text-2xl font-serif italic text-primary">Serenity</h1>
         <p className="font-sans text-xs uppercase tracking-widest text-secondary mt-1">
           Your Tactile Sanctuary
@@ -103,6 +126,7 @@ export function Sidebar() {
             <Link
               key={item.path}
               href={item.path}
+              onClick={closeSidebar}
               className={cn(
                 "flex items-center gap-4 px-6 py-4 transition-all duration-300",
                 isActive 
@@ -148,5 +172,6 @@ export function Sidebar() {
         </div>
       </div>
     </nav>
+  </>
   );
 }

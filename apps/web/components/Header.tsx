@@ -6,6 +6,7 @@ import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 import { authClient } from "../lib/auth-client";
+import { useSidebar } from "./SidebarContext";
 
 function cn(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -15,6 +16,7 @@ export function Header() {
   const pathname = usePathname();
   const { data: session } = authClient.useSession();
   const user = session?.user;
+  const { toggleSidebar } = useSidebar();
 
   const navItems = [
     { label: "Sanctuary", path: "/sanctuary" },
@@ -24,10 +26,21 @@ export function Header() {
 
   return (
     <header className="sticky top-0 left-0 w-full h-20 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/15 z-50 flex shrink-0 items-center justify-between px-8 md:px-12">
-      {/* Logo */}
-      <Link href="/" className="font-serif text-3xl font-bold text-primary tracking-tight">
-        Serenity
-      </Link>
+      <div className="flex items-center gap-4">
+        {/* Mobile Hamburger Menu */}
+        <button 
+          onClick={toggleSidebar}
+          className="md:hidden text-secondary hover:text-primary transition-colors flex items-center justify-center p-1 -ml-2"
+          aria-label="Toggle Menu"
+        >
+          <span className="material-symbols-outlined text-[28px]">menu</span>
+        </button>
+
+        {/* Logo */}
+        <Link href="/" className="font-serif text-3xl font-bold text-primary tracking-tight">
+          Serenity
+        </Link>
+      </div>
 
       {/* Navigation & Actions */}
       <div className="flex items-center gap-8">
