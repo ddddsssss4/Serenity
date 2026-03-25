@@ -10,11 +10,7 @@ import { toNodeHandler } from "better-auth/node";
 // Mount better-auth handler for all routes under this router
 router.all("/*", toNodeHandler(auth));
 
-/**
- * POST /api/auth/verify
- * Validates the current better-auth session and returns the user profile.
- * Uses the app User table (not the auth_user table).
- */
+
 router.post("/verify", requireAuth, async (req, res) => {
   try {
     // Try to find or create the app User record keyed by better-auth userId
