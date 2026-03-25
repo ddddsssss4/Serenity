@@ -9,6 +9,7 @@ export default function Landing() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
@@ -121,14 +122,26 @@ export default function Landing() {
                 required
                 className="w-full py-4 px-6 bg-surface-container-highest/50 border border-outline-variant/40 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary/60 outline-none transition-all text-on-surface placeholder:text-on-surface-variant/50 font-sans"
               />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full py-4 px-6 bg-surface-container-highest/50 border border-outline-variant/40 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary/60 outline-none transition-all text-on-surface placeholder:text-on-surface-variant/50 font-sans"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className="w-full py-4 pl-6 pr-14 bg-surface-container-highest/50 border border-outline-variant/40 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary/60 outline-none transition-all text-on-surface placeholder:text-on-surface-variant/50 font-sans"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/60 hover:text-primary transition-colors focus:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  <span className="material-symbols-outlined text-xl">
+                    {showPassword ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
+              </div>
             </div>
 
             {errorMsg && (
