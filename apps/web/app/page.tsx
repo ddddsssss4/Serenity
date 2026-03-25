@@ -4,7 +4,9 @@ import { useRouter } from 'next/navigation';
 import { authClient } from '../lib/auth-client';
 
 export default function Landing() {
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [isLoading, setIsLoading] = useState(false);
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -25,25 +27,47 @@ export default function Landing() {
     );
   }
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMsg('');
+
     try {
-      const result = await authClient.signIn.email({
-        email,
-        password,
-        callbackURL: `${window.location.origin}/sanctuary`,
-      });
-      if ((result as any)?.error) {
-        setErrorMsg((result as any).error.message || 'Invalid credentials. Please try again.');
-        setIsLoading(false);
+      if (mode === 'signup') {
+        const result = await authClient.signUp.email({
+          name,
+          email,
+          password,
+          callbackURL: `${window.location.origin}/sanctuary`,
+        });
+        if ((result as any)?.error) {
+          setErrorMsg((result as any).error.message || 'Could not create account. Please try again.');
+          setIsLoading(false);
+        }
+      } else {
+        const result = await authClient.signIn.email({
+          email,
+          password,
+          callbackURL: `${window.location.origin}/sanctuary`,
+        });
+        if ((result as any)?.error) {
+          setErrorMsg((result as any).error.message || 'Invalid credentials. Please try again.');
+          setIsLoading(false);
+        }
       }
     } catch (err: any) {
-      console.error('Sign-in failed:', err);
+      console.error('Auth failed:', err);
       setErrorMsg('Something went wrong. Please try again.');
       setIsLoading(false);
     }
+  };
+
+  const switchMode = () => {
+    setMode(mode === 'signin' ? 'signup' : 'signin');
+    setErrorMsg('');
+    setName('');
+    setEmail('');
+    setPassword('');
   };
 
   return (
@@ -67,14 +91,28 @@ export default function Landing() {
 
         <div className="bg-surface-container-low/80 backdrop-blur-3xl rounded-[3rem] p-12 shadow-sm border border-surface-variant/30 space-y-8">
           <div className="space-y-2">
-            <h2 className="font-serif text-3xl text-on-surface">Welcome Home</h2>
+            <h2 className="font-serif text-3xl text-on-surface">
+              {mode === 'signin' ? 'Welcome Home' : 'Begin Your Journey'}
+            </h2>
             <p className="text-on-surface-variant leading-relaxed">
-              Begin your journey to mindfulness and emotional clarity.
+              {mode === 'signin'
+                ? 'Sign in to continue your mindfulness journey.'
+                : 'Create your account to get started.'}
             </p>
           </div>
 
-          <form onSubmit={handleSignIn} className="space-y-4 text-left">
+          <form onSubmit={handleSubmit} className="space-y-4 text-left">
             <div className="space-y-3">
+              {mode === 'signup' && (
+                <input
+                  type="text"
+                  placeholder="Full Name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full py-4 px-6 bg-surface-container-highest/50 border border-outline-variant/40 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary/60 outline-none transition-all text-on-surface placeholder:text-on-surface-variant/50 font-sans"
+                />
+              )}
               <input
                 type="email"
                 placeholder="Email Address"
@@ -108,24 +146,26 @@ export default function Landing() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                   </svg>
-                  <span>Signing in...</span>
+                  <span>{mode === 'signin' ? 'Signing in...' : 'Creating account...'}</span>
                 </>
               ) : (
                 <>
-                  <span>Sign In</span>
-                  <span className="material-symbols-outlined text-sm">login</span>
+                  <span>{mode === 'signin' ? 'Sign In' : 'Create Account'}</span>
+                  <span className="material-symbols-outlined text-sm">{mode === 'signin' ? 'login' : 'person_add'}</span>
                 </>
               )}
             </button>
 
-            <div className="flex items-center justify-between px-1 text-center">
-              <button type="button" className="text-xs font-medium text-primary/70 hover:text-primary hover:underline transition-all">
-                Forgot Password?
+            <p className="text-center text-sm text-on-surface-variant">
+              {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}{' '}
+              <button
+                type="button"
+                onClick={switchMode}
+                className="text-primary font-medium hover:underline transition-all"
+              >
+                {mode === 'signin' ? 'Create Account' : 'Sign In'}
               </button>
-              <button type="button" className="text-xs font-medium text-primary/70 hover:text-primary hover:underline transition-all">
-                Create Account
-              </button>
-            </div>
+            </p>
           </form>
 
           <div className="pt-6 border-t border-outline-variant/20 space-y-3">
