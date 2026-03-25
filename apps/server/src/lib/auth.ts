@@ -22,6 +22,17 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: ["http://localhost:3000", "http://localhost:3001", "https://serenitywellness.vercel.app"],
+  advanced: {
+    crossPageAuth: true,
+    cookies: {
+      session_token: {
+        attributes: {
+          sameSite: "None",
+          secure: true,
+        },
+      },
+    },
+  },
   socialProviders: {
     google: {
       clientId: env.GOOGLE_CLIENT_ID,
