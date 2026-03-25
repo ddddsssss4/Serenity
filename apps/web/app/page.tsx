@@ -1,11 +1,13 @@
 "use client";
-import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { authClient } from '../lib/auth-client';
 
 export default function Landing() {
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
 
@@ -23,15 +25,23 @@ export default function Landing() {
     );
   }
 
-  const handleGoogleSignIn = async () => {
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
+    setErrorMsg('');
     try {
-      await authClient.signIn.social({
-        provider: 'google',
-        callbackURL: 'https://serenitywellness.vercel.app/sanctuary',
+      const result = await authClient.signIn.email({
+        email,
+        password,
+        callbackURL: `${window.location.origin}/sanctuary`,
       });
-    } catch (err) {
-      console.error('Google sign-in failed:', err);
+      if ((result as any)?.error) {
+        setErrorMsg((result as any).error.message || 'Invalid credentials. Please try again.');
+        setIsLoading(false);
+      }
+    } catch (err: any) {
+      console.error('Sign-in failed:', err);
+      setErrorMsg('Something went wrong. Please try again.');
       setIsLoading(false);
     }
   };
@@ -56,26 +66,41 @@ export default function Landing() {
         </div>
 
         <div className="bg-surface-container-low/80 backdrop-blur-3xl rounded-[3rem] p-12 shadow-sm border border-surface-variant/30 space-y-8">
-          <div className="space-y-4">
+          <div className="space-y-2">
             <h2 className="font-serif text-3xl text-on-surface">Welcome Home</h2>
             <p className="text-on-surface-variant leading-relaxed">
               Begin your journey to mindfulness and emotional clarity.
             </p>
           </div>
 
-          <div className="space-y-4">
-            <button 
-              disabled
-              className="w-full py-4 bg-primary text-on-primary rounded-full font-medium opacity-60 cursor-not-allowed shadow-sm flex items-center justify-center gap-2"
-            >
-              <span>Begin Journey</span>
-              <span className="material-symbols-outlined text-sm">arrow_forward</span>
-            </button>
-            
-            <button 
-              onClick={handleGoogleSignIn}
+          <form onSubmit={handleSignIn} className="space-y-4 text-left">
+            <div className="space-y-3">
+              <input
+                type="email"
+                placeholder="Email Address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full py-4 px-6 bg-surface-container-highest/50 border border-outline-variant/40 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary/60 outline-none transition-all text-on-surface placeholder:text-on-surface-variant/50 font-sans"
+              />
+              <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full py-4 px-6 bg-surface-container-highest/50 border border-outline-variant/40 rounded-2xl focus:ring-2 focus:ring-primary/20 focus:border-primary/60 outline-none transition-all text-on-surface placeholder:text-on-surface-variant/50 font-sans"
+              />
+            </div>
+
+            {errorMsg && (
+              <p className="text-error text-sm font-medium text-center px-2">{errorMsg}</p>
+            )}
+
+            <button
+              type="submit"
               disabled={isLoading}
-              className="w-full py-4 bg-surface-container-highest text-on-surface rounded-full font-medium hover:bg-surface-variant transition-colors flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-4 bg-primary text-on-primary rounded-full font-medium hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-3 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.98]"
             >
               {isLoading ? (
                 <>
@@ -87,15 +112,33 @@ export default function Landing() {
                 </>
               ) : (
                 <>
-                  <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
-                  <span>Continue with Google</span>
+                  <span>Sign In</span>
+                  <span className="material-symbols-outlined text-sm">login</span>
                 </>
               )}
             </button>
-            
-            <button 
+
+            <div className="flex items-center justify-between px-1 text-center">
+              <button type="button" className="text-xs font-medium text-primary/70 hover:text-primary hover:underline transition-all">
+                Forgot Password?
+              </button>
+              <button type="button" className="text-xs font-medium text-primary/70 hover:text-primary hover:underline transition-all">
+                Create Account
+              </button>
+            </div>
+          </form>
+
+          <div className="pt-6 border-t border-outline-variant/20 space-y-3">
+            <button
               disabled
-              className="w-full py-4 bg-transparent border border-outline text-on-surface rounded-full font-medium opacity-60 cursor-not-allowed"
+              className="w-full py-3.5 bg-surface-container-highest/20 text-on-surface-variant/40 rounded-full font-medium cursor-not-allowed flex items-center justify-center gap-2 border border-outline-variant/10 text-sm"
+            >
+              <span>Begin Journey</span>
+              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+            <button
+              disabled
+              className="w-full py-3.5 bg-transparent border border-outline-variant/20 text-on-surface-variant/40 rounded-full font-medium cursor-not-allowed text-sm"
             >
               Continue Anonymously
             </button>
